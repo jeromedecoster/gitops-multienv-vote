@@ -1,0 +1,69 @@
+html {
+    height: 100%;
+}
+
+body {
+    background-color: #cfd8dc;
+    font-size: 1em;
+    overflow: hidden;
+}
+
+.box {
+    background-color: #eceff1;
+    padding: 4.5em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 600px;
+    text-align: center;
+}
+
+.box.hidden button {
+    visibility: hidden;
+}
+
+.box button:first-child {
+    margin-right: 1.5em;
+}
+
+button {
+    font-size: 3em;
+    padding: .4em 1em;
+    border: 3px solid #37474f;
+    color: #37474f;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+button:hover {
+    background-color: #37474f;
+    color: #eceff1;
+}
+
+button span {
+    font-family: monospace;
+    font-weight: 600;
+    margin-left: 10px;
+    pointer-events: none;
+}
+
+footer {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #37474f;
+
+    /* uncomment below to create feature-one */
+    /* 
+    color: black;
+    background-color: #eceff1;
+    border: #37474f 1px dashed;
+    padding: .7em; 
+    */
+}
+
+:focus {
+    outline: none !important;
+}

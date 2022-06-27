@@ -1,0 +1,71 @@
+# when a push is done in another branch than master, create an ecr repository
+# associated with this branch and build + push the image
+name: cd
+
+on: 
+  push:
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-excluding-branches
+    branches-ignore:
+      - master
+  pull_request:
+    branches-ignore:
+      - master
+
+env: 
+  AWS_REGION: eu-west-3
+  ECR_REPOSITORY: multienv-vote-${{ github.ref_name }}
+  # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+  SHORT_SHA: $(echo ${{ github.sha }} | cut -c 1-8)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # https://github.com/marketplace/actions/skip-based-on-commit-message#just-use-yaml-recommended
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    steps:
+    - name: Github variables
+      run: |
+        echo github.event.ref: ${{ github.event.ref }}
+        echo github.ref_type: ${{ github.ref_type }}
+        echo github.ref_name: ${{ github.ref_name }}
+        echo github.sha: ${{ github.sha }}
+        
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create repository
+      # https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ecr/create-repository.html
+      run: |
+        aws ecr create-repository \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --query 'repository.repositoryUri' \
+          --output text \
+          2>/dev/null
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+      # https://docs.docker.com/engine/reference/commandline/image_build/
+      # https://docs.docker.com/engine/reference/commandline/push/
+      run: |
+        cd vote
+        docker image build \
+          --build-arg NODE_ENV=${{ github.ref_name }} \
+          --build-arg VERSION=${{ env.SHORT_SHA }} \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest \
+          .
+        docker push --all-tags ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}

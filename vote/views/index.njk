@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/normalize.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/font-awesome/all.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
+    <title>Vote</title>
+</head>
+
+<body>
+    <div class="box hidden">
+        <button class="far fa-thumbs-up" id="up"><span>0</span></button>
+        <button class="far fa-thumbs-down" id="down"><span>0</span></button>
+    </div>
+    
+    <footer>
+    {% if node_env == 'development' %}<u>development</u> {% endif %}version: {{ version }}
+    </footer>
+    
+    <script src="/js/axios.min.js"></script>
+    <script src="/js/main.js"></script>
+
+    {% if node_env == 'development' %}
+    <script>
+        document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] +
+            ':35729/livereload.js?snipver=1"></' + 'script>')
+    </script>
+    {% endif %}
+</body>
+
+</html>

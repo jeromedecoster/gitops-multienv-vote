@@ -1,0 +1,39 @@
+# when a branch is deleted, delete the repository associated with this branch
+name: branch deleted
+
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#delete
+on: delete
+
+env:
+  AWS_REGION: eu-west-3
+  # /!\ on master branch, to get the name of an other deleted branch,
+  # you need to get { github.event.ref } instead of { github.ref_name }
+  # https://stackoverflow.com/a/62293570
+  ECR_REPOSITORY: multienv-vote-${{ github.event.ref }}
+
+jobs:
+  delete:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Github variables
+        run: |
+          echo github.event.ref: ${{ github.event.ref }}
+          echo github.ref_type: ${{ github.ref_type }}
+          echo github.ref_name: ${{ github.ref_name }}
+          echo github.sha: ${{ github.sha }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete repository
+        run: |
+          aws ecr delete-repository \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --query 'repository.repositoryUri' \
+            --output text \
+            2>/dev/null

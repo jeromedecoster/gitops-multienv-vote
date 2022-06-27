@@ -1,0 +1,61 @@
+# when a tag is pushed, create an ecr repository and build + push the image
+name: tag
+
+on:  
+  push:
+    # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#running-your-workflow-only-when-a-push-of-specific-tags-occurs
+    tags: [ "v*.*.*" ]
+
+env: 
+  AWS_REGION: eu-west-3
+  ECR_REPOSITORY: multienv-vote
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+    - name: Github variables
+      run: |
+        echo github.event.ref: ${{ github.event.ref }}
+        echo github.ref_type: ${{ github.ref_type }}
+        echo github.ref_name: ${{ github.ref_name }}
+        echo github.sha: ${{ github.sha }}
+        
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create repository
+      # https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ecr/create-repository.html
+      run: |
+        aws ecr create-repository \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --query 'repository.repositoryUri' \
+          --output text \
+          2>/dev/null
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+      run: |
+        cd vote
+        docker image build \
+          --build-arg NODE_ENV=production \
+          --build-arg VERSION=${{ github.ref_name }} \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.ref_name }} \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest \
+          .
+        docker push --all-tags ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}

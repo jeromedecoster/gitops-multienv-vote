@@ -1,0 +1,13 @@
+FROM node:18.2-slim
+# https://stackoverflow.com/a/52430444
+ARG NODE_ENV
+ENV NODE_ENV $NODE_ENV
+ARG VERSION
+ENV VERSION $VERSION
+ARG WEBSITE_PORT
+ENV WEBSITE_PORT $WEBSITE_PORT
+WORKDIR /app
+ADD . .
+RUN npm install
+# EXPOSE 3000
+CMD ["node", "index.js"]
