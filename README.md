@@ -1,7 +1,5 @@
 # gitops-multienv-vote
 
-Creation of a **website**, hosted on a **Kubernetes cluster**. Use **Kubectl**, **Kustomize** and **Github actions** to deploy it in a **GitOps** way. 
-
-- Updated version using **terraform** and without **eksctl**
+Deploy multiple environments on multiple EKS clusters with ArgoCD. 
 
 ![architecture.svg](architecture.svg)
